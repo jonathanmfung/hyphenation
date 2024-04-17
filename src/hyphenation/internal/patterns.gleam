@@ -1,12 +1,10 @@
 import gleam/int
+import gleam/list
 import gleam/result
 import gleam/string
-import gleam/list
-import gleam/io
-import gleam/dict.{type Dict}
-import gleam/option.{type Option, None, Some}
 import simplifile
 
+// Types to phantom-ize Pattern
 pub opaque type Input {
   Input
 }
@@ -15,6 +13,13 @@ pub opaque type Reference {
   Reference
 }
 
+// Should only be constructed via string.from_graphemes
+type Graphemes =
+  List(String)
+
+type Scores =
+  List(Int)
+
 pub type Pattern(source) {
   // Scores should be 1 longer than List(String), for beg/end
   Pattern(graphemes: List(String), scores: List(Int))
@@ -22,10 +27,6 @@ pub type Pattern(source) {
 
 pub type Patterns {
   Patterns(List(#(List(String), List(Int))))
-}
-
-fn pattern_to_tuple(p: Pattern(t)) -> #(List(String), List(Int)) {
-  #(p.graphemes, p.scores)
 }
 
 /// Lookup the score of a pattern, if it exists
@@ -42,10 +43,7 @@ pub fn new_patterns() -> Patterns {
 }
 
 pub fn insert_reference(ps: Patterns, p: Pattern(t)) -> Patterns {
-  // convert s to pattern?
-  let ref =
-    p
-    |> pattern_to_tuple
+  let ref = #(p.graphemes, p.scores)
   let Patterns(ls) = ps
   Patterns([ref, ..ls])
 }
@@ -65,6 +63,7 @@ pub fn parse_reference(s: String) -> Pattern(Reference) {
 }
 
 // from ekmett
+/// s is a reference pattern string, e.g. "param4"
 fn score_reference(s: String) -> List(Int) {
   // TOOD incorrectly scores "param4" as [0,0,0,0,0], should be [0,0,0,0,4]
   case string.pop_grapheme(s) {
@@ -83,6 +82,7 @@ fn score_reference(s: String) -> List(Int) {
   }
 }
 
+/// s is an input string, e.g. "hyphenate"
 pub fn new(s: String) -> Pattern(Input) {
   // TODO need to add . to input in both front and back?
   let new_s = string.to_graphemes(s)
@@ -91,15 +91,7 @@ pub fn new(s: String) -> Pattern(Input) {
   Pattern(graphemes: new_s, scores: empty_score)
 }
 
-pub fn main() {
-  let assert Ok(patterns) = read_patterns("./data/hyph-en-us.pat.txt")
-
-  let hyphenated = process("systems", patterns)
-
-  string.join(hyphenated, "‧")
-  |> io.debug
-}
-
+// TODO maybe this List(String) is HyphenatedWord
 /// Hyphenate a string under a given set of patterns.
 ///
 /// Output is list of substrings, split where hyphens should be inserted.
@@ -117,16 +109,17 @@ pub fn process(s: String, ps: Patterns) -> List(String) {
     |> new
   let res_score = process_input(pattern, ps)
 
-  let hyphenated = hyphenate(list.zip(pattern.graphemes, res_score))
+  hyphenate(list.zip(pattern.graphemes, res_score))
 }
 
-pub fn process_input(s: Pattern(Input), patterns: Patterns) -> List(Int) {
+/// Calculate final scores for input.
+pub fn process_input(inp: Pattern(Input), patterns: Patterns) -> List(Int) {
   let subs: List(#(Int, List(String))) =
-    s.graphemes
+    inp.graphemes
     |> conseq_sublist()
 
   subs
-  |> list.fold(s.scores, fn(old_score, ind_substring) {
+  |> list.fold(inp.scores, fn(old_score, ind_substring) {
     case get_pattern_score(patterns, ind_substring.1) {
       Ok(new_score) -> update_score(old_score, new_score, ind_substring.0)
       Error(Nil) -> old_score
@@ -134,6 +127,7 @@ pub fn process_input(s: Pattern(Input), patterns: Patterns) -> List(Int) {
   })
 }
 
+// Break string according to it's final score
 pub fn hyphenate(ls: List(#(String, Int))) -> List(String) {
   do_hyphenate(ls, [])
 }
@@ -186,27 +180,19 @@ fn do_hyphenate(ls: List(#(String, Int)), acc: List(String)) -> List(String) {
   }
 }
 
-// fn split_while_incl(ls: List(a), f: fn(a) -> Bool) -> #(List(a), List(a)) {
-//   let #(left, right) = list.split_while(ls, f)
-//   case right {
-//     [] -> #(left, right)
-//     [x, ..xs] -> #(list.append(left, [x]), xs)
-//   }
-// }
-
 /// Generate Patterns from a patgen file.
-///
-/// ## Example
-///
-/// ```gleam
-/// let assert Ok(patterns) = read_patterns("./data/hyph-en-us.pat.txt")
-/// ```
-///
 pub fn read_patterns(file: String) -> Result(Patterns, simplifile.FileError) {
+  // TODO need to remove dangling newline, which creates empty pattern
   use patterns_str <- result.map(simplifile.read(from: file))
 
   patterns_str
   |> string.split("\n")
+  |> list.map(parse_reference)
+  |> list.fold(new_patterns(), insert_reference)
+}
+
+pub fn from_codegen(codegen: List(String)) -> Patterns {
+  codegen
   |> list.map(parse_reference)
   |> list.fold(new_patterns(), insert_reference)
 }

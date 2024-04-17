@@ -1,34 +1,82 @@
-import gleam/io
-import gleam/int
-import gleam/string
-import gleam/result
 import gleam/list
-import simplifile
-import pattern.{type Input, type Pattern, type Reference}
+import gleam/string
+import hyphenation/internal/metadata
+import hyphenation/internal/patterns.{type Patterns}
+import language.{type Language}
 
-pub fn main() {
-  io.println("Hello from hyphenation!")
-  // should be [3, 0, 0, 2, 0]
-  "3fo2o."
-  |> pattern.parse_reference()
-  |> io.debug
+/// Break a string into hyphenated parts, using a hyphenator.
+/// ## Example
+/// ```gleam
+/// hyphenate("hyphenation", hyphenator(language.EnglishUS))
+/// // -> ["hy", "phen", "ation"]
+/// ```
+pub fn hyphenate(s: String, h: Hyphenator) -> List(String) {
+  // Respect min lengths
+  //  do hyphenation on input
+  //      then check if first and last length are < min_left/right
+  //      if true, concat with next element
+  let hyphenated = patterns.process(s, h.patterns)
 
-  "param4"
-  |> pattern.parse_reference()
-  |> io.debug
+  let is_min_left = case hyphenated {
+    [] -> True
+    [x, ..] -> string.length(x) < h.left_min
+  }
 
-  "para"
-  |> pattern.new
-  |> io.debug
-  // https://mirrors.mit.edu/CTAN/language/hyph-utf8/tex/generic/hyph-utf8/patterns/txt/hyph-en-us.pat.txt
+  let hyphenated =
+    case is_min_left {
+      True -> {
+        merge_two(hyphenated, string.append)
+      }
+      False -> hyphenated
+    }
+    |> list.reverse
 
-  // TODO need to remove dangling newline, which creates empty pattern
-  let assert Ok(patterns_str) =
-    simplifile.read(from: "./data/hyph-en-us.pat.txt")
-  patterns_str
-  |> string.split("\n")
-  |> list.map(pattern.parse_reference)
-  |> list.fold(pattern.new_patterns(), pattern.insert_reference)
-  |> pattern.get_pattern_score(["p", "a", "r", "a", "m"])
-  |> io.debug
+  let is_min_right = case hyphenated {
+    [] -> True
+    [x, ..] -> string.length(x) < h.right_min
+  }
+  let hyphenated =
+    case is_min_right {
+      True -> {
+        merge_two(hyphenated, fn(x, y) { string.append(y, x) })
+      }
+      False -> hyphenated
+    }
+    |> list.reverse
+  hyphenated
+}
+
+fn merge_two(ls: List(a), f: fn(a, a) -> a) -> List(a) {
+  case ls {
+    [x, y, ..xs] -> [f(x, y), ..xs]
+    _ -> ls
+  }
+}
+
+/// Hyphenate a string using a hyphenator, delim is hyphen character.
+/// ## Example
+/// ```gleam
+/// hyphenate_delim("hyphenation", hyphenator(language.EnglishUS), "-")
+/// // -> "hy-phen-ation"
+/// ```
+pub fn hyphenate_delim(s: String, h: Hyphenator, delim: String) -> String {
+  string.join(hyphenate(s, h), delim)
+}
+
+// TODO add exceptions, maybe normalization function
+pub opaque type Hyphenator {
+  Hyphenator(
+    language: String,
+    patterns: Patterns,
+    left_min: Int,
+    right_min: Int,
+  )
+}
+
+/// Construct Hyphenator from desired language.
+pub fn hyphenator(l: Language) -> Hyphenator {
+  let md = metadata.metadata(l)
+  let patterns = language.patterns(l)
+
+  Hyphenator(md.abbreviation, patterns, md.left_min, md.right_min)
 }

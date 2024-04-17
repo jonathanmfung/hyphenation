@@ -1,6 +1,10 @@
+import gleam/list
+import gleam/string
 import gleeunit
 import gleeunit/should
-import pattern
+import hyphenation
+import hyphenation/internal/patterns
+import language
 
 pub fn main() {
   gleeunit.main()
@@ -19,16 +23,16 @@ pub fn parse_reference_test() {
 }
 
 pub fn insert_reference_test() {
-  pattern.insert_reference(
-    pattern.new_patterns(),
-    pattern.Pattern(["a"], [0, 0]),
+  patterns.insert_reference(
+    patterns.new_patterns(),
+    patterns.Pattern(["a"], [0, 0]),
   )
-  |> should.equal(pattern.Patterns([#(["a"], [0, 0]), #([], [])]))
+  |> should.equal(patterns.Patterns([#(["a"], [0, 0]), #([], [])]))
 }
 
 pub fn conseq_sublist_test() {
   ["a", "b", "c"]
-  |> pattern.conseq_sublist
+  |> patterns.conseq_sublist
   |> should.equal([
     #(0, ["a"]),
     #(0, ["a", "b"]),
@@ -41,17 +45,84 @@ pub fn conseq_sublist_test() {
 
 pub fn update_score_test() {
   [0, 0, 0]
-  |> pattern.update_score([1, 0], 1)
+  |> patterns.update_score([1, 0], 1)
   |> should.equal([0, 1, 0])
 
   [0, 0, 0]
-  |> pattern.update_score([1, 0], 1)
-  |> pattern.update_score([2], 2)
+  |> patterns.update_score([1, 0], 1)
+  |> patterns.update_score([2], 2)
   |> should.equal([0, 1, 2])
 
   [0, 0, 0]
-  |> pattern.update_score([1, 0], 1)
-  |> pattern.update_score([2], 2)
-  |> pattern.update_score([3, 0], 1)
+  |> patterns.update_score([1, 0], 1)
+  |> patterns.update_score([2], 2)
+  |> patterns.update_score([3, 0], 1)
   |> should.equal([0, 3, 2])
+}
+
+pub fn hyphenator_hyphenate_test() {
+  let hyphenator = hyphenation.hyphenator(language.EnglishUS)
+  ""
+  |> hyphenation.hyphenate(hyphenator)
+  |> should.equal([""])
+
+  "parameter"
+  |> hyphenation.hyphenate(hyphenator)
+  |> should.equal(["pa", "ra", "me", "ter"])
+
+  "hyphenation"
+  |> hyphenation.hyphenate(hyphenator)
+  |> should.equal(["hy", "phen", "ation"])
+
+  "supercalifragilisticexpialadocious"
+  |> hyphenation.hyphenate(hyphenator)
+  |> should.equal([
+    "su", "per", "cal", "ifrag", "ilis", "tic", "ex", "pi", "al", "ado", "cious",
+  ])
+
+  "systems"
+  |> hyphenation.hyphenate(hyphenator)
+  |> should.equal(["sys", "tems"])
+
+  "reliability"
+  |> hyphenation.hyphenate(hyphenator)
+  |> should.equal(["re", "li", "a", "bil", "ity"])
+
+  "ab"
+  |> hyphenation.hyphenate(hyphenator)
+  |> should.equal(["ab"])
+}
+
+pub fn hyphenate_test() {
+  [#("a", 0), #("b", 2), #("c", 3), #("d", 0)]
+  |> patterns.hyphenate
+  |> should.equal(["ab", "cd"])
+
+  [#("a", 0), #("b", 0)]
+  |> patterns.hyphenate
+  |> should.equal(["ab"])
+
+  [#("c", 1), #("d", 0)]
+  |> patterns.hyphenate
+  |> should.equal(["cd"])
+}
+
+pub fn readme_test() {
+  let word = "hyphenation"
+
+  let hyphenator = hyphenation.hyphenator(language.EnglishUS)
+
+  hyphenation.hyphenate(word, hyphenator)
+  |> should.equal(["hy", "phen", "ation"])
+
+  let text =
+    "Gleam is a friendly language for building type-safe systems that scale!
+    The power of a type system, the expressiveness of functional programming,
+    and the reliability of the highly concurrent, fault tolerant Erlang runtime,
+    with a familiar and modern syntax."
+
+  text
+  |> string.split(" ")
+  |> list.map(hyphenation.hyphenate_delim(_, hyphenator, "‧"))
+  |> string.join(" ")
 }
