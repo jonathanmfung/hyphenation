@@ -121,13 +121,14 @@ fn license_text(l: License) -> String {
 //  ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE."
-    LPPL -> todo
-    GPL -> todo
     OtherFree ->
       "//  Copying and distribution of this file, with or without modification,
 //  are permitted in any medium without royalty provided the copyright
 //  notice and this notice are preserved"
-    Unlicense -> todo
+    // LPPL -> todo
+    // GPL -> todo
+    // Unlicense -> todo
+    _ -> ""
   }
 }
 
