@@ -64,6 +64,7 @@ fn gen(raw_str: String, c: Content) -> String {
     }
   }
 
+  // TODO need to remove dangling newline, which creates empty pattern
   let content =
     raw_str
     |> string.split("\n")

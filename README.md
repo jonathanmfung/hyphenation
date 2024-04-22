@@ -48,7 +48,7 @@ Further documentation can be found at <https://hexdocs.pm/hyphenation>.
 ## Development
 Run `download_patterns.sh` to download all TeX patterns.
 
-Then `gleam run -m hyphenation/internal/codegen` to update generated gleam files.
+Then `gleam run -m codegen` to update generated gleam files.
 
 ## TODO
 

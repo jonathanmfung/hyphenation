@@ -2,7 +2,6 @@ import gleam/int
 import gleam/list
 import gleam/result
 import gleam/string
-import simplifile
 
 // Types to phantom-ize Pattern
 pub opaque type Input {
@@ -178,17 +177,6 @@ fn do_hyphenate(ls: List(#(String, Int)), acc: List(String)) -> List(String) {
       do_hyphenate(rest, list.append(acc, [head.0 <> extract_string(syllable)]))
     }
   }
-}
-
-/// Generate Patterns from a patgen file.
-pub fn read_patterns(file: String) -> Result(Patterns, simplifile.FileError) {
-  // TODO need to remove dangling newline, which creates empty pattern
-  use patterns_str <- result.map(simplifile.read(from: file))
-
-  patterns_str
-  |> string.split("\n")
-  |> list.map(parse_reference)
-  |> list.fold(new_patterns(), insert_reference)
 }
 
 pub fn from_codegen(codegen: List(String)) -> Patterns {
