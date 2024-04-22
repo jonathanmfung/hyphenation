@@ -4,7 +4,7 @@ import gleeunit
 import gleeunit/should
 import hyphenation
 import hyphenation/internal/patterns
-import language
+import hyphenation/language
 
 pub fn main() {
   gleeunit.main()

@@ -2,7 +2,7 @@ import gleam/list
 import gleam/string
 import hyphenation/internal/metadata
 import hyphenation/internal/patterns.{type Patterns}
-import language.{type Language}
+import hyphenation/language.{type Language}
 
 /// Break a string into hyphenated parts, using a hyphenator.
 /// ## Example

@@ -1,4 +1,4 @@
-import language.{type Language}
+import hyphenation/language.{type Language}
 
 /// Metadata for a Language
 pub type Metadata {

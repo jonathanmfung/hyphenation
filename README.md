@@ -14,7 +14,7 @@ import gleam/list
 import gleam/io
 
 import hyphenation
-import language
+import hyphenation/language
 
 pub fn main() {
  let word = "hyphenation"

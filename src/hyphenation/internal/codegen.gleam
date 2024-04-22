@@ -5,7 +5,7 @@ import gleam/list
 import gleam/result
 import gleam/string
 import hyphenation/internal/metadata.{metadata}
-import language.{type Language}
+import hyphenation/language.{type Language}
 import simplifile
 
 // generation disclaimer
