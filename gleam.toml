@@ -1,5 +1,5 @@
 name = "hyphenation"
-version = "0.2.0"
+version = "0.3.0"
 
 description = "Pure-Gleam implementation of Knuth–Liang Hyphenation."
 licences = ["Apache-2.0"]
@@ -7,7 +7,7 @@ repository = { type = "github", user = "jonathanmfung", repo = "hyphenation" }
 
 [dependencies]
 gleam_stdlib = "~> 0.34 or ~> 1.0"
-simplifile = "~> 1.6"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"
+simplifile = "~> 1.6"
